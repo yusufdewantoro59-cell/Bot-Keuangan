@@ -6,20 +6,26 @@ import re
 import os
 
 # ================= CONFIG =================
-BOT_TOKEN = os.getenv("8525931178:AAEWtI15q0sCQektc8-vZNmlmI58gWiXSr4")
-SPREADSHEET_ID = os.getenv("1a2Pl4rDePzjT-9igq_7F0xRVY2-uI8sSIyh53PoRqds")
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 # =========================================
 
 # Google Sheets Auth
+import json
+
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "credentials.json", scope
+
+google_creds = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    google_creds, scope
 )
+
 client = gspread.authorize(creds)
-sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+sheet = client.open_by_key(os.environ["SPREADSHEET_ID"]).sheet1
+
 
 def parse_message(text):
     text = text.lower()
