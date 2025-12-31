@@ -1,30 +1,26 @@
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 import re
 import os
+import json
 
 # ================= CONFIG =================
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 # =========================================
 
-# Google Sheets Auth
-import json
-
+# Google Sheets Auth (ENV)
 scope = [
-    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
 google_creds = json.loads(os.environ["GOOGLE_CREDENTIALS"])
-creds = ServiceAccountCredentials.from_json_keyfile_dict(
-    google_creds, scope
-)
-
+creds = Credentials.from_service_account_info(google_creds, scopes=scope)
 client = gspread.authorize(creds)
-sheet = client.open_by_key(os.environ["SPREADSHEET_ID"]).sheet1
+sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 
 def parse_message(text):
@@ -44,6 +40,7 @@ def parse_message(text):
 
     return kategori, nominal, text
 
+
 async def handle_message(update, context):
     text = update.message.text
 
@@ -53,20 +50,17 @@ async def handle_message(update, context):
     sheet.append_row([tanggal, kategori, nominal, deskripsi])
 
     await update.message.reply_text(
-        f"✅ Dicatat\n"
-        f"Kategori: {kategori}\n"
-        f"Nominal: Rp{nominal:,}"
+        f"✅ Dicatat\nKategori: {kategori}\nNominal: Rp{nominal:,}"
     )
+
 
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
-    )
-
     print("Bot berjalan & siap mencatat pengeluaran...")
+
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
